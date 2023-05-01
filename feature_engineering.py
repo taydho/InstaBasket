@@ -17,6 +17,7 @@ def user_features(data):
 
     return user_features_df
 
+
 def product_features(data):
     product_orders = data.groupby('product_id')['order_id'].count().reset_index()
     product_orders.columns = ['product_id', 'product_orders']

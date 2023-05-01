@@ -17,7 +17,15 @@ def merge_data(order_products_prior, order_products_train, orders, products):
     train_data = pd.merge(order_products_train, orders, on='order_id', how='left')
     train_data = pd.merge(train_data, products, on='product_id', how='left')
 
+    # Keep 'order_hour_of_day' and 'order_dow' columns
+    prior_data['order_hour_of_day'] = prior_data['order_hour_of_day'].astype('category')
+    prior_data['order_dow'] = prior_data['order_dow'].astype('category')
+    
+    train_data['order_hour_of_day'] = train_data['order_hour_of_day'].astype('category')
+    train_data['order_dow'] = train_data['order_dow'].astype('category')
+
     return prior_data, train_data
+
 
 def preprocess_data(data):
     # Fill missing values
@@ -32,7 +40,7 @@ def preprocess_data(data):
 
     return data
 
-def load_and_preprocess_data(sample_fraction=0.3):
+def load_and_preprocess_data(sample_fraction=0.1):
     aisles, departments, order_products_prior, order_products_train, orders, products = load_data()
     prior_data, train_data = merge_data(order_products_prior, order_products_train, orders, products)
     prior_data = preprocess_data(prior_data)
