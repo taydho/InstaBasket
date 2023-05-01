@@ -1,21 +1,41 @@
-import numpy as np
 import pandas as pd
+from feature_engineering import user_features, product_features
 
-def preprocess_new_data(new_data):
-    # Preprocess and engineer features for the new data
-    # Make sure to apply the same preprocessing and feature engineering steps as you did for the training data
-    new_data_features = pd.DataFrame()  # Replace with engineered features for new_data
-    return new_data_features
+def make_predictions(model, test_features):
+    # Make predictions
+    predictions = model.predict(test_features)
 
-def make_predictions(model, new_data):
-    # Preprocess and engineer features for the new data
-    new_data_features = preprocess_new_data(new_data)
+    # Convert predictions to a 1-dimensional NumPy array
+    predictions_np = predictions.reshape(-1)
 
-    # Make predictions using the trained model
-    predictions = model.predict(new_data_features)
+    # Get the unique order_ids
+    unique_order_ids = test_features['order_id'].unique()
 
-    # Process the predictions
-    # For example, if your model outputs probabilities, you can convert them to binary predictions
-    binary_predictions = (predictions > 0.5).astype(int)
+    # Check if lengths match and if not, truncate the longer one
+    if len(unique_order_ids) != len(predictions_np):
+        min_length = min(len(unique_order_ids), len(predictions_np))
+        unique_order_ids = unique_order_ids[:min_length]
+        predictions_np = predictions_np[:min_length]
 
-    return binary_predictions
+    # Save predictions to output.csv
+    output = pd.DataFrame({'order_id': unique_order_ids, 'products': predictions_np})
+    output.to_csv('output.csv', index=False)
+
+    return predictions
+
+
+def preprocess_and_extract_features(test_data):
+    # Preprocess test data and create test features similar to feature_engineering.py
+    user_features_test = user_features(test_data)
+    product_features_test = product_features(test_data)
+
+    test_features = pd.merge(test_data, user_features_test, on='user_id')
+    test_features = pd.merge(test_features, product_features_test, on='product_id')
+
+    # Drop non-numerical columns
+    test_features = test_features.select_dtypes(include=['number'])
+
+    # Extract test_order_ids
+    test_order_ids = test_data['order_id'].unique()
+
+    return test_features, test_order_ids
