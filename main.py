@@ -1,40 +1,28 @@
-from data_preparation import load_and_preprocess_data
-from feature_engineering import create_features
-from train import train_model, perform_cross_validation, train_xgb_with_early_stopping
-from prediction import make_predictions
-from xgboost import XGBClassifier
-import time
+from data_preparation import load_and_preprocess_data, create_user_sequences, encode_product_ids
+from create_rnn_cnn_model import train_and_evaluate
+from train_test_split import train_test_split_sequences
 
 def main():
+    # Load and preprocess the data
     prior_data, train_data = load_and_preprocess_data()
-    model_features, train_features, train_labels, val_features, val_labels, test_features, test_labels = create_features(prior_data, train_data)
-    
-    xgb_model = XGBClassifier(
-        objective='binary:logistic',
-        colsample_bytree=0.5,
-        gamma=0,
-        learning_rate=0.1,
-        max_depth=5,
-        min_child_weight=1,
-        n_estimators=300,
-        subsample=1,
-        eval_metric='logloss',
-        n_jobs=-1,
-        use_label_encoder=False,
-        seed=42
-    )
 
+    # Create sequences of ordered products for each user
+    user_sequences = create_user_sequences(prior_data, train_data)
 
-    # Perform cross-validation
-    perform_cross_validation(xgb_model, train_features, train_labels)
+    # Encode product IDs
+    encoded_user_sequences, num_classes = encode_product_ids(user_sequences)
 
-    # Train XGBoost model with early stopping
-    xgb_model = train_xgb_with_early_stopping(xgb_model, train_features, train_labels, val_features, val_labels)
+    # Split the data into training and validation sets
+    train_data, val_data = train_test_split_sequences(encoded_user_sequences, test_size=0.1, random_state=42)
 
-    # Train the model with the best hyperparameters
-    model = train_model(train_features, train_labels, val_features, val_labels, xgb_model)
+    # Set the input dimensions for the RNN/CNN model
+    sequence_length = train_data.shape[1]
+    num_features = train_data.shape[2]
 
-    make_predictions(model, test_features)  # Pass test_features as an argument
+    # Train and evaluate the RNN/CNN model
+    performance_metrics = train_and_evaluate(train_data, val_data, sequence_length, num_features, num_classes)
+
+    print(performance_metrics)
 
 if __name__ == "__main__":
     start_time = time.time()

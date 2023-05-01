@@ -46,7 +46,8 @@ def perform_cross_validation(model, features, labels, k_folds=5, scoring='roc_au
 def train_model(train_features, train_labels, val_features, val_labels, xgb_model): 
 
     # Logistic Regression classifier
-    clf2 = LogisticRegression(random_state=42)
+    clf2 = LogisticRegression(random_state=42, max_iter=1000)
+
 
     # Define the base estimators
     base_estimators = [
