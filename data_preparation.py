@@ -40,6 +40,7 @@ def preprocess_data(data):
     data['aisle_id'] = data['aisle_id'].astype('category')
     data['department_id'] = data['department_id'].astype('category')
 
+
     return data
 
 
