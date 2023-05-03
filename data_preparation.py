@@ -46,11 +46,12 @@ def preprocess_data(data):
 
 
 def load_and_preprocess_data(sample_fraction=1.0):
+    # Load the raw data
     aisles, departments, order_products_prior, order_products_train, orders, products = load_data()
     
     # Merge products, aisles, and departments
     products = products.merge(aisles, on='aisle_id').merge(departments, on='department_id')
-    
+     # Merge and preprocess the prior and train data
     prior_data, train_data = merge_data(order_products_prior, order_products_train, orders, products)
     prior_data = preprocess_data(prior_data)
     train_data = preprocess_data(train_data)

@@ -2,11 +2,15 @@ import pandas as pd
 from feature_engineering import user_features, product_features
 
 def make_predictions(model, test_features):
-    # Make predictions
-    predictions = model.predict(test_features)
+    """
+    Given a trained model and test features, returns the predicted probabilities
+    for the positive class (reordered) and saves the output to a CSV file.
+    """
+    # Make predictions (probabilities)
+    predictions = model.predict_proba(test_features)
 
-    # Convert predictions to a 1-dimensional NumPy array
-    predictions_np = predictions.reshape(-1)
+    # Extract the probabilities for the positive class (reordered)
+    predictions_np = predictions[:, 1]
 
     # Get the unique order_ids
     unique_order_ids = test_features['order_id'].unique()
@@ -21,10 +25,14 @@ def make_predictions(model, test_features):
     output = pd.DataFrame({'order_id': unique_order_ids, 'products': predictions_np})
     output.to_csv('output.csv', index=False)
 
-    return predictions
+    return predictions_np
 
 
 def preprocess_and_extract_features(test_data):
+    """
+    Given test data, preprocesses it and extracts features similar to feature_engineering.py
+    and returns the test features and unique order IDs.
+    """
     # Preprocess test data and create test features similar to feature_engineering.py
     user_features_test = user_features(test_data)
     product_features_test = product_features(test_data)

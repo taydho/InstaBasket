@@ -1,21 +1,20 @@
 from xgboost import XGBClassifier
 import numpy as np
-from sklearn.metrics import f1_score
-from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, roc_auc_score, confusion_matrix
-from sklearn.model_selection import cross_val_score
-from sklearn.model_selection import RandomizedSearchCV
-from sklearn.model_selection import KFold
-from sklearn.ensemble import StackingClassifier
+from sklearn.metrics import f1_score, accuracy_score, precision_score, recall_score, roc_auc_score, confusion_matrix
+from sklearn.model_selection import cross_val_score, RandomizedSearchCV, KFold
+from sklearn.ensemble import StackingClassifier, HistGradientBoostingClassifier
 from sklearn.linear_model import LogisticRegression
+from sklearn.impute import SimpleImputer
+
 
 def train_xgb_with_early_stopping(xgb_model, train_features, train_labels, val_features, val_labels):
+    """Trains XGBoost model with early stopping."""
     xgb_model.fit(train_features, train_labels)
     return xgb_model
 
 
-
-
 def perform_cross_validation(model, features, labels, k_folds=5, scoring='roc_auc'):
+    """Performs cross-validation and prints mean and standard deviation of the score."""
     kf = KFold(n_splits=k_folds)
     scores = []
 
@@ -44,22 +43,21 @@ def perform_cross_validation(model, features, labels, k_folds=5, scoring='roc_au
 
 
 def train_model(train_features, train_labels, val_features, val_labels, xgb_model): 
-
-    # Logistic Regression classifier
-    clf2 = LogisticRegression(random_state=42, max_iter=1000)
-
+    """Trains a stacking ensemble classifier using XGBoost and Histogram-based Gradient Boosting."""
+    log_reg_clf = HistGradientBoostingClassifier(random_state=42, max_iter=1000)
+    meta_classifier = LogisticRegression(solver='lbfgs', max_iter=1000, random_state=42)
 
     # Define the base estimators
     base_estimators = [
         ('xgb', xgb_model),
-        ('lr', clf2)
+        ('lr', log_reg_clf)
     ]
-
-    # Define the meta-classifier
-    meta_classifier = LogisticRegression(random_state=42)
-
     # Instantiate the StackingClassifier
     ensemble = StackingClassifier(estimators=base_estimators, final_estimator=meta_classifier)
+    # Use mean strategy for imputing missing values
+    imputer = SimpleImputer(strategy='mean')
+    train_features = imputer.fit_transform(train_features)
+    val_features = imputer.transform(val_features)
 
     # Fit the ensemble to the training data
     ensemble.fit(train_features, train_labels)
